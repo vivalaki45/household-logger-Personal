@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>家計簿ロガー</title>
 
   <style>
@@ -17,6 +16,7 @@
       --green-dark: #0b8043;
       --red: #d93025;
       --blue: #1a73e8;
+      --orange: #f29900;
       --shadow: rgba(0, 0, 0, 0.08);
     }
 
@@ -33,7 +33,7 @@
     }
 
     .app {
-      max-width: 480px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
@@ -43,7 +43,7 @@
 
     h1 {
       margin: 0 0 8px;
-      font-size: 26px;
+      font-size: 28px;
       line-height: 1.2;
     }
 
@@ -51,6 +51,13 @@
       font-size: 14px;
       color: var(--sub);
       line-height: 1.7;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
     }
 
     .card {
@@ -87,6 +94,12 @@
     .status.error {
       background: #fdecea;
       color: var(--red);
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 20px;
+      font-weight: 800;
     }
 
     label {
@@ -140,25 +153,6 @@
       font-weight: 800;
     }
 
-    .quick-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .quick-grid button {
-      margin: 0;
-      padding: 11px 8px;
-      border-radius: 12px;
-      border: none;
-      background: #edf2f7;
-      color: #222;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
     .submit {
       width: 100%;
       margin-top: 18px;
@@ -183,6 +177,50 @@
       color: var(--sub);
     }
 
+    .summary-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: var(--sub);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .summary-value.food {
+      color: var(--green-dark);
+    }
+
+    .summary-value.social {
+      color: var(--orange);
+    }
+
+    .summary-value.cardpay {
+      color: var(--blue);
+    }
+
+    .summary-note {
+      margin-top: 12px;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
     .footer {
       margin-top: 14px;
       text-align: center;
@@ -202,6 +240,54 @@
     .last.show {
       display: block;
     }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 12px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .card {
+        padding: 14px;
+        border-radius: 18px;
+      }
+
+      .section-title {
+        font-size: 16px;
+      }
+
+      label {
+        font-size: 12px;
+      }
+
+      select,
+      input,
+      textarea {
+        font-size: 15px;
+        padding: 12px 10px;
+      }
+
+      .submit {
+        font-size: 16px;
+        padding: 14px;
+      }
+
+      .summary-value {
+        font-size: 20px;
+      }
+
+      .summary-item {
+        padding: 12px;
+      }
+    }
   </style>
 </head>
 
@@ -215,53 +301,66 @@
       </div>
     </div>
 
-    <div class="card">
-      <div id="status" class="status"></div>
+    <div class="layout">
+      <div class="card">
+        <h2 class="section-title">入力</h2>
 
-      <div id="loading" class="loading">
-        読み込み中...
+        <div id="status" class="status"></div>
+
+        <div id="loading" class="loading">読み込み中...</div>
+
+        <form id="form" style="display:none;">
+          <label for="category">Category</label>
+          <select id="category"></select>
+
+          <label for="item">Item</label>
+          <select id="item"></select>
+
+          <label for="amount">Amount</label>
+          <div class="amount-box">
+            <span class="yen">¥</span>
+            <input id="amount" type="number" inputmode="numeric" min="1" placeholder="金額" required>
+          </div>
+
+          <label for="memo">Memo</label>
+          <textarea id="memo" placeholder="メモ。空欄でもOK"></textarea>
+
+          <button id="submitButton" class="submit" type="submit">保存する</button>
+        </form>
+
+        <div id="last" class="last"></div>
       </div>
 
-      <form id="form" style="display:none;">
-        <label for="category">Category</label>
-        <select id="category"></select>
+      <div class="card">
+        <h2 class="section-title">変動費</h2>
 
-        <label for="item">Item</label>
-        <select id="item"></select>
+        <div class="summary-list">
+          <div class="summary-item">
+            <div class="summary-label">食費</div>
+            <div id="foodTotal" class="summary-value food">¥0</div>
+          </div>
 
-        <label for="amount">Amount</label>
-        <div class="amount-box">
-          <span class="yen">¥</span>
-          <input
-            id="amount"
-            type="number"
-            inputmode="numeric"
-            min="1"
-            placeholder="金額"
-            required
-          >
+          <div class="summary-item">
+            <div class="summary-label">交際費</div>
+            <div id="socialTotal" class="summary-value social">¥0</div>
+          </div>
+
+          <div class="summary-item">
+            <div class="summary-label">カードの支払い</div>
+            <div id="cardTotal" class="summary-value cardpay">¥0</div>
+          </div>
         </div>
 
-        <div class="quick-grid">
-          <button type="button" onclick="addAmount(100)">+100</button>
-          <button type="button" onclick="addAmount(500)">+500</button>
-          <button type="button" onclick="addAmount(1000)">+1000</button>
+        <div class="summary-note">
+          食費・交際費はItemで集計。<br>
+          カードの支払いはCategory空欄の合計。
         </div>
-
-        <label for="memo">Memo</label>
-        <textarea id="memo" placeholder="メモ。空欄でもOK"></textarea>
-
-        <button id="submitButton" class="submit" type="submit">
-          保存する
-        </button>
-      </form>
-
-      <div id="last" class="last"></div>
+      </div>
     </div>
 
     <div class="footer">
       CategoryとItemはスプレッドシートの入力規則から取得します。<br>
-      カード払いはCategoryを空欄で保存します。
+      保存成功時、対応端末では軽く振動します。
     </div>
   </div>
 
@@ -279,6 +378,10 @@
     const memoEl = document.getElementById('memo');
     const submitButton = document.getElementById('submitButton');
     const lastEl = document.getElementById('last');
+
+    const foodTotalEl = document.getElementById('foodTotal');
+    const socialTotalEl = document.getElementById('socialTotal');
+    const cardTotalEl = document.getElementById('cardTotal');
 
     window.addEventListener('load', function () {
       showStatus('初期データを読み込んでいます...', 'info');
@@ -322,9 +425,7 @@
         query.push('callback=' + encodeURIComponent(callbackName));
 
         Object.keys(params).forEach(function (key) {
-          query.push(
-            encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
-          );
+          query.push(encodeURIComponent(key) + '=' + encodeURIComponent(params[key]));
         });
 
         const script = document.createElement('script');
@@ -369,11 +470,11 @@
       setOptions(categoryEl, data.categories || []);
       setOptions(itemEl, data.items || []);
 
+      updateSummary(data.summary || { food: 0, social: 0, card: 0 });
+
       loadingEl.style.display = 'none';
       formEl.style.display = 'block';
       hideStatus();
-
-      amountEl.focus();
     }
 
     function setOptions(selectEl, options) {
@@ -435,6 +536,8 @@
     function handleSaved(result) {
       showStatus('保存しました。', 'success');
 
+      vibrateSuccess();
+
       const saved = result.saved || {};
 
       lastEl.className = 'last show';
@@ -446,19 +549,29 @@
         '¥' + Number(saved.amount || 0).toLocaleString() + '　' +
         (saved.memo || '');
 
+      updateSummary(result.summary || { food: 0, social: 0, card: 0 });
+
       amountEl.value = '';
       memoEl.value = '';
 
       submitButton.disabled = false;
       submitButton.textContent = '保存する';
-
-      amountEl.focus();
     }
 
-    function addAmount(value) {
-      const current = Number(amountEl.value || 0);
-      amountEl.value = current + value;
-      amountEl.focus();
+    function updateSummary(summary) {
+      foodTotalEl.textContent = formatYen(summary.food || 0);
+      socialTotalEl.textContent = formatYen(summary.social || 0);
+      cardTotalEl.textContent = formatYen(summary.card || 0);
+    }
+
+    function formatYen(value) {
+      return '¥' + Number(value || 0).toLocaleString();
+    }
+
+    function vibrateSuccess() {
+      if (navigator.vibrate) {
+        navigator.vibrate(80);
+      }
     }
 
     function showStatus(message, type) {
@@ -473,10 +586,7 @@
 
     function handleError(error) {
       loadingEl.style.display = 'none';
-      formEl.style.display = 'none';
-
       showStatus(error.message || String(error), 'error');
-
       submitButton.disabled = false;
       submitButton.textContent = '保存する';
     }
