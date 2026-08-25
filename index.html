@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>家計簿ロガー</title>
+<style>
+:root {
+--bg: #f5f7f8;
+--card: #ffffff;
+--text: #1f2933;
+--sub: #6b7280;
+--border: #d9dee3;
+--green: #0f9d58;
+--green-dark: #0b8043;
+--red: #d93025;
+--blue: #1a73e8;
+--shadow: rgba(0, 0, 0, 0.08);
+}
+{
+box-sizing: border-box;
+}
+body {
+margin: 0;
+padding: 16px;
+background: var(--bg);
+color: var(--text);
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.app {
+max-width: 480px;
+margin: 0 auto;
+}
+.header {
+margin-bottom: 16px;
+}
+h1 {
+margin: 0 0 8px;
+font-size: 26px;
+line-height: 1.2;
+}
+.meta {
+font-size: 14px;
+color: var(--sub);
+line-height: 1.7;
+}
+.card {
+background: var(--card);
+border-radius: 20px;
+padding: 18px;
+box-shadow: 0 6px 20px var(--shadow);
+}
+.status {
+display: none;
+margin-bottom: 14px;
+padding: 12px;
+border-radius: 12px;
+font-size: 14px;
+line-height: 1.5;
+white-space: pre-wrap;
+}
+.status.show {
+display: block;
+}
+.status.info {
+background: #e8f0fe;
+color: var(--blue);
+}
+.status.success {
+background: #e6f4ea;
+color: var(--green-dark);
+}
+.status.error {
+background: #fdecea;
+color: var(--red);
+}
+label {
+display: block;
+margin: 14px 0 6px;
+font-size: 14px;
+font-weight: 700;
+}
+select,
+input,
+textarea {
+width: 100%;
+border: 1px solid var(--border);
+border-radius: 14px;
+padding: 14px 12px;
+font-size: 18px;
+background: #ffffff;
+color: var(--text);
+outline: none;
+}
+select:focus,
+input:focus,
+textarea:focus {
+border-color: var(--green);
+box-shadow: 0 0 0 3px rgba(15, 157, 88, 0.14);
+}
+textarea {
+min-height: 88px;
+resize: vertical;
+}
+.amount-box {
+position: relative;
+}
+.yen {
+position: absolute;
+top: 50%;
+left: 14px;
+transform: translateY(-50%);
+font-size: 18px;
+color: var(--sub);
+pointer-events: none;
+}
+#amount {
+padding-left: 36px;
+font-weight: 800;
+}
+.quick-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 8px;
+margin-top: 8px;
+}
+.quick-grid button {
+margin: 0;
+padding: 11px 8px;
+border-radius: 12px;
+border: none;
+background: #edf2f7;
+color: #222;
+font-size: 14px;
+font-weight: 700;
+}
+.submit {
+width: 100%;
+margin-top: 18px;
+padding: 16px;
+border: none;
+border-radius: 16px;
+background: var(--green);
+color: #fff;
+font-size: 19px;
+font-weight: 800;
+cursor: pointer;
+}
+.submit:disabled {
+opacity: 0.55;
+cursor: not-allowed;
+}
+.loading {
+padding: 24px 0;
+text-align: center;
+color: var(--sub);
+}
+.footer {
+margin-top: 14px;
+text-align: center;
+color: var(--sub);
+font-size: 12px;
+line-height: 1.6;
+}
+.last {
+margin-top: 12px;
+font-size: 13px;
+color: var(--sub);
+line-height: 1.6;
+display: none;
+}
+.last.show {
+display: block;
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+<h1>家計簿ロガー</h1>
+<div class="meta">
+<div>日付：取得中...</div>
+<div>入力先：取得中...</div>
+</div>
+</div>
+<div class="card">
+<div id="status" class="status"></div>
+<div id="loading" class="loading">
+読み込み中...
+</div>
+<form id="form" style="display:none;">
+<label for="category">Category</label>
+<select id="category"></select>
+<label for="item">Item</label>
+<select id="item"></select>
+<label for="amount">Amount</label>
+<div class="amount-box">
+¥
+<input
+id="amount"
+type="number"
+inputmode="numeric"
+min="1"
+placeholder="金額"
+required
+/>
+</div>
+<div class="quick-grid">
+<button type="button" onclick="addAmount(100)">+100</button>
+<button type="button" onclick="addAmount(500)">+500</button>
+<button type="button" onclick="addAmount(1000)">+1000</button>
+</div>
+<label for="memo">Memo</label>
+<textarea id="memo" placeholder="メモ。空欄でもOK"></textarea>
+<button id="submitButton" class="submit" type="submit">
+保存する
+</button>
+</form>
+<div id="last" class="last"></div>
+</div>
+<div class="footer">
+CategoryとItemはスプレッドシートの入力規則から取得します。
+
+カード払いはCategoryを空欄で保存します。
+</div>
+</div>
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxGe9RSpDwmY_crff6OGwvI4AxSQIxD7Abl7t7HBFLHhFI1bqTTPZLZD58Ab_Yu4cQ/exec';
+const todayTextEl = document.getElementById('todayText');
+const sheetNameEl = document.getElementById('sheetName');
+const statusEl = document.getElementById('status');
+const loadingEl = document.getElementById('loading');
+const formEl = document.getElementById('form');
+const categoryEl = document.getElementById('category');
+const itemEl = document.getElementById('item');
+const amountEl = document.getElementById('amount');
+const memoEl = document.getElementById('memo');
+const submitButton = document.getElementById('submitButton');
+const lastEl = document.getElementById('last');
+window.addEventListener('load', function () {
+showStatus('初期データを読み込んでいます...', 'info');
+callApi('init')
+.then(function (data) {
+handleInitialData(data);
+})
+.catch(function (error) {
+handleError(error);
+});
+});
+function callApi(action, params = {}) {
+return new Promise(function (resolve, reject) {
+const callbackName =
+'jsonpCallback_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+window[callbackName] = function (data) {
+cleanup();
+if (!data || data.success === false) {
+reject(new Error(data && data.message ? data.message : 'APIエラーが発生しました。'));
+return;
+}
+resolve(data);
+};
+const url = new URL(API_URL);
+url.searchParams.set('action', action);
+url.searchParams.set('callback', callbackName);
+Object.keys(params).forEach(function (key) {
+url.searchParams.set(key, params[key]);
+});
+const script = document.createElement('script');
+script.src = url.toString();
+script.onerror = function () {
+cleanup();
+reject(new Error('APIに接続できませんでした。Apps ScriptのURLや公開設定を確認してください。'));
+};
+document.body.appendChild(script);
+function cleanup() {
+delete window[callbackName];
+if (script.parentNode) {
+script.parentNode.removeChild(script);
+}
+}
+});
+}
+function handleInitialData(data) {
+todayTextEl.textContent = data.todayText || '';
+sheetNameEl.textContent = data.sheetName || '';
+setOptions(categoryEl, data.categories || []);
+setOptions(itemEl, data.items || []);
+loadingEl.style.display = 'none';
+formEl.style.display = 'block';
+hideStatus();
+amountEl.focus();
+}
+function setOptions(selectEl, options) {
+selectEl.innerHTML = '';
+if (!options.length) {
+const option = document.createElement('option');
+option.value = '';
+option.textContent = '選択肢なし';
+selectEl.appendChild(option);
+return;
+}
+options.forEach(function (value) {
+const option = document.createElement('option');
+option.value = value;
+option.textContent = value;
+selectEl.appendChild(option);
+});
+}
+formEl.addEventListener('submit', function (event) {
+event.preventDefault();
+const category = categoryEl.value;
+const item = itemEl.value;
+const amount = amountEl.value;
+const memo = memoEl.value;
+if (!item) {
+showStatus('Itemを選択してください。', 'error');
+return;
+}
+if (!amount || Number(amount) <= 0) {
+showStatus('金額を入力してください。', 'error');
+amountEl.focus();
+return;
+}
+submitButton.disabled = true;
+submitButton.textContent = '保存中...';
+showStatus('保存しています...', 'info');
+callApi('add', {
+category: category,
+item: item,
+amount: amount,
+memo: memo
+})
+.then(function (result) {
+handleSaved(result);
+})
+.catch(function (error) {
+handleError(error);
+});
+});
+function handleSaved(result) {
+showStatus('保存しました。', 'success');
+const saved = result.saved || {};
+lastEl.className = 'last show';
+lastEl.innerHTML =
+'最後の保存：' + result.sheetName + ' / ' + result.row + '行目
+' +
+(saved.date || '') + '　' +
+(saved.category || 'カード払い') + '　' +
+(saved.item || '') + '　' +
+'¥' + Number(saved.amount || 0).toLocaleString() + '　' +
+(saved.memo || '');
+amountEl.value = '';
+memoEl.value = '';
+submitButton.disabled = false;
+submitButton.textContent = '保存する';
+amountEl.focus();
+}
+function addAmount(value) {
+const current = Number(amountEl.value || 0);
+amountEl.value = current + value;
+amountEl.focus();
+}
+function showStatus(message, type) {
+statusEl.textContent = message;
+statusEl.className = 'status show ' + type;
+}
+function hideStatus() {
+statusEl.textContent = '';
+statusEl.className = 'status';
+}
+function handleError(error) {
+loadingEl.style.display = 'none';
+showStatus(error.message || String(error), 'error');
+submitButton.disabled = false;
+submitButton.textContent = '保存する';
+}
+</script>
+</body>
+</html>
