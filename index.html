@@ -185,31 +185,47 @@
     }
 
     .summary-item {
+      position: relative;
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 16px;
       background: #ffffff;
     }
 
+    .summary-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
     .summary-label {
       font-size: 14px;
       color: var(--sub);
-      margin-bottom: 6px;
-      font-weight: 700;
+      font-weight: 800;
+    }
+
+    .summary-budget {
+      font-size: 13px;
+      color: var(--sub);
+      font-weight: 800;
+      white-space: nowrap;
     }
 
     .summary-value {
       font-size: 34px;
       font-weight: 900;
       letter-spacing: -0.03em;
-    }
-
-    .summary-value.food {
-      color: var(--green-dark);
+      line-height: 1.15;
     }
 
     .summary-value.social {
       color: var(--orange);
+    }
+
+    .summary-value.food {
+      color: var(--green-dark);
     }
 
     .summary-value.cardpay {
@@ -344,18 +360,26 @@
 
         <div class="summary-list">
           <div class="summary-item">
-            <div class="summary-label">食費</div>
-            <div id="foodTotal" class="summary-value food">¥0</div>
+            <div class="summary-top">
+              <div class="summary-label">交際費</div>
+              <div id="socialBudget" class="summary-budget">¥0</div>
+            </div>
+            <div id="socialRemaining" class="summary-value social">¥0</div>
           </div>
 
           <div class="summary-item">
-            <div class="summary-label">交際費</div>
-            <div id="socialTotal" class="summary-value social">¥0</div>
+            <div class="summary-top">
+              <div class="summary-label">食費</div>
+              <div id="foodBudget" class="summary-budget">¥0</div>
+            </div>
+            <div id="foodRemaining" class="summary-value food">¥0</div>
           </div>
 
           <div class="summary-item">
-            <div class="summary-label">カードの支払い</div>
-            <div id="cardTotal" class="summary-value cardpay">¥0</div>
+            <div class="summary-top">
+              <div class="summary-label">カード支払い</div>
+            </div>
+            <div id="cardPayment" class="summary-value cardpay">¥0</div>
           </div>
         </div>
       </div>
@@ -384,9 +408,11 @@
     const submitButton = document.getElementById('submitButton');
     const lastEl = document.getElementById('last');
 
-    const foodTotalEl = document.getElementById('foodTotal');
-    const socialTotalEl = document.getElementById('socialTotal');
-    const cardTotalEl = document.getElementById('cardTotal');
+    const socialBudgetEl = document.getElementById('socialBudget');
+    const socialRemainingEl = document.getElementById('socialRemaining');
+    const foodBudgetEl = document.getElementById('foodBudget');
+    const foodRemainingEl = document.getElementById('foodRemaining');
+    const cardPaymentEl = document.getElementById('cardPayment');
 
     const inputScreenEl = document.getElementById('inputScreen');
     const summaryScreenEl = document.getElementById('summaryScreen');
@@ -414,7 +440,7 @@
 
         callApi('summary')
           .then(function (data) {
-            updateSummary(data.summary || { food: 0, social: 0, card: 0 });
+            updateSummary(data.summary || {});
           })
           .catch(function () {});
       } else {
@@ -500,7 +526,7 @@
       setOptions(categoryEl, data.categories || []);
       setOptions(itemEl, data.items || []);
 
-      updateSummary(data.summary || { food: 0, social: 0, card: 0 });
+      updateSummary(data.summary || {});
 
       loadingEl.style.display = 'none';
       formEl.style.display = 'block';
@@ -579,7 +605,7 @@
         '¥' + Number(saved.amount || 0).toLocaleString() + '　' +
         (saved.memo || '');
 
-      updateSummary(result.summary || { food: 0, social: 0, card: 0 });
+      updateSummary(result.summary || {});
 
       amountEl.value = '';
       memoEl.value = '';
@@ -589,9 +615,11 @@
     }
 
     function updateSummary(summary) {
-      foodTotalEl.textContent = formatYen(summary.food || 0);
-      socialTotalEl.textContent = formatYen(summary.social || 0);
-      cardTotalEl.textContent = formatYen(summary.card || 0);
+      socialBudgetEl.textContent = formatYen(summary.socialBudget || 0);
+      socialRemainingEl.textContent = formatYen(summary.socialRemaining || 0);
+      foodBudgetEl.textContent = formatYen(summary.foodBudget || 0);
+      foodRemainingEl.textContent = formatYen(summary.foodRemaining || 0);
+      cardPaymentEl.textContent = formatYen(summary.cardPayment || 0);
     }
 
     function formatYen(value) {
