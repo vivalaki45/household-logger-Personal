@@ -27,13 +27,14 @@
     body {
       margin: 0;
       padding: 16px;
+      padding-bottom: 88px;
       background: var(--bg);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .app {
-      max-width: 960px;
+      max-width: 480px;
       margin: 0 auto;
     }
 
@@ -53,18 +54,19 @@
       line-height: 1.7;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      align-items: start;
-    }
-
     .card {
       background: var(--card);
       border-radius: 20px;
       padding: 18px;
       box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
     }
 
     .status {
@@ -185,19 +187,19 @@
     .summary-item {
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 14px;
+      padding: 16px;
       background: #ffffff;
     }
 
     .summary-label {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--sub);
       margin-bottom: 6px;
       font-weight: 700;
     }
 
     .summary-value {
-      font-size: 28px;
+      font-size: 34px;
       font-weight: 900;
       letter-spacing: -0.03em;
     }
@@ -214,21 +216,6 @@
       color: var(--blue);
     }
 
-    .summary-note {
-      margin-top: 12px;
-      color: var(--sub);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .footer {
-      margin-top: 14px;
-      text-align: center;
-      color: var(--sub);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
     .last {
       margin-top: 12px;
       font-size: 13px;
@@ -241,51 +228,70 @@
       display: block;
     }
 
-    @media (max-width: 720px) {
+    .tabs {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 16px;
+      background: rgba(245, 247, 248, 0.94);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .tab-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: #e9edf2;
+      padding: 5px;
+      border-radius: 18px;
+    }
+
+    .tab-button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--sub);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .tab-button.active {
+      color: var(--text);
+      background: #ffffff;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    @media (max-width: 520px) {
       body {
         padding: 12px;
-      }
-
-      .layout {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        padding-bottom: 88px;
       }
 
       h1 {
-        font-size: 24px;
+        font-size: 26px;
       }
 
       .card {
-        padding: 14px;
+        padding: 16px;
         border-radius: 18px;
-      }
-
-      .section-title {
-        font-size: 16px;
-      }
-
-      label {
-        font-size: 12px;
       }
 
       select,
       input,
       textarea {
-        font-size: 15px;
-        padding: 12px 10px;
-      }
-
-      .submit {
         font-size: 16px;
-        padding: 14px;
+        padding: 13px 11px;
       }
 
       .summary-value {
-        font-size: 20px;
-      }
-
-      .summary-item {
-        padding: 12px;
+        font-size: 30px;
       }
     }
   </style>
@@ -301,7 +307,7 @@
       </div>
     </div>
 
-    <div class="layout">
+    <section id="inputScreen" class="screen active">
       <div class="card">
         <h2 class="section-title">入力</h2>
 
@@ -330,7 +336,9 @@
 
         <div id="last" class="last"></div>
       </div>
+    </section>
 
+    <section id="summaryScreen" class="screen">
       <div class="card">
         <h2 class="section-title">変動費</h2>
 
@@ -350,19 +358,16 @@
             <div id="cardTotal" class="summary-value cardpay">¥0</div>
           </div>
         </div>
-
-        <div class="summary-note">
-          食費・交際費はItemで集計。<br>
-          カードの支払いはCategory空欄の合計。
-        </div>
       </div>
-    </div>
-
-    <div class="footer">
-      CategoryとItemはスプレッドシートの入力規則から取得します。<br>
-      保存成功時、対応端末では軽く振動します。
-    </div>
+    </section>
   </div>
+
+  <nav class="tabs">
+    <div class="tab-inner">
+      <button id="inputTab" class="tab-button active" type="button" onclick="switchScreen('input')">入力</button>
+      <button id="summaryTab" class="tab-button" type="button" onclick="switchScreen('summary')">集計</button>
+    </div>
+  </nav>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxGe9RSpDwmY_crff6OGwvI4AxSQIxD7Abl7t7HBFLHhFI1bqTTPZLZD58Ab_Yu4cQ/exec';
@@ -383,6 +388,11 @@
     const socialTotalEl = document.getElementById('socialTotal');
     const cardTotalEl = document.getElementById('cardTotal');
 
+    const inputScreenEl = document.getElementById('inputScreen');
+    const summaryScreenEl = document.getElementById('summaryScreen');
+    const inputTabEl = document.getElementById('inputTab');
+    const summaryTabEl = document.getElementById('summaryTab');
+
     window.addEventListener('load', function () {
       showStatus('初期データを読み込んでいます...', 'info');
 
@@ -394,6 +404,26 @@
           handleError(error);
         });
     });
+
+    function switchScreen(screenName) {
+      if (screenName === 'summary') {
+        inputScreenEl.classList.remove('active');
+        summaryScreenEl.classList.add('active');
+        inputTabEl.classList.remove('active');
+        summaryTabEl.classList.add('active');
+
+        callApi('summary')
+          .then(function (data) {
+            updateSummary(data.summary || { food: 0, social: 0, card: 0 });
+          })
+          .catch(function () {});
+      } else {
+        summaryScreenEl.classList.remove('active');
+        inputScreenEl.classList.add('active');
+        summaryTabEl.classList.remove('active');
+        inputTabEl.classList.add('active');
+      }
+    }
 
     function callApi(action, params) {
       params = params || {};
@@ -450,7 +480,7 @@
 
           finished = true;
           cleanup();
-          reject(new Error('読み込みがタイムアウトしました。GitHub側のindex.htmlまたはApps Scriptのデプロイ設定を確認してください。'));
+          reject(new Error('読み込みがタイムアウトしました。'));
         }, 15000);
 
         function cleanup() {
