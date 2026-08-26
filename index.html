@@ -156,22 +156,43 @@
     }
 
     .submit {
-      width: 100%;
-      margin-top: 18px;
-      padding: 16px;
-      border: none;
-      border-radius: 16px;
-      background: var(--green);
-      color: #fff;
-      font-size: 19px;
-      font-weight: 800;
-      cursor: pointer;
-    }
+  width: 100%;
+  margin-top: 18px;
+  padding: 18px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 45%, #14b8a6 100%);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow:
+    0 14px 28px rgba(34, 197, 94, 0.28),
+    0 6px 12px rgba(20, 184, 166, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
+}
 
-    .submit:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
+.submit:active {
+  transform: translateY(2px) scale(0.99);
+  box-shadow:
+    0 8px 18px rgba(34, 197, 94, 0.24),
+    0 3px 8px rgba(20, 184, 166, 0.16),
+    inset 0 2px 4px rgba(0, 0, 0, 0.12);
+  filter: brightness(0.98);
+}
+
+.submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  background: linear-gradient(135deg, #9ca3af 0%, #cbd5e1 100%);
+  box-shadow: none;
+}
 
     .loading {
       padding: 24px 0;
