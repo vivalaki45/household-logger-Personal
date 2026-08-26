@@ -156,43 +156,43 @@
     }
 
     .submit {
-  width: 100%;
-  margin-top: 18px;
-  padding: 18px;
-  border: none;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 45%, #14b8a6 100%);
-  color: #fff;
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  box-shadow:
-    0 14px 28px rgba(34, 197, 94, 0.28),
-    0 6px 12px rgba(20, 184, 166, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.28);
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    filter 0.12s ease;
-}
+      width: 100%;
+      margin-top: 18px;
+      padding: 18px;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 45%, #14b8a6 100%);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      box-shadow:
+        0 14px 28px rgba(34, 197, 94, 0.28),
+        0 6px 12px rgba(20, 184, 166, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        filter 0.12s ease;
+    }
 
-.submit:active {
-  transform: translateY(2px) scale(0.99);
-  box-shadow:
-    0 8px 18px rgba(34, 197, 94, 0.24),
-    0 3px 8px rgba(20, 184, 166, 0.16),
-    inset 0 2px 4px rgba(0, 0, 0, 0.12);
-  filter: brightness(0.98);
-}
+    .submit:active {
+      transform: translateY(2px) scale(0.99);
+      box-shadow:
+        0 8px 18px rgba(34, 197, 94, 0.24),
+        0 3px 8px rgba(20, 184, 166, 0.16),
+        inset 0 2px 4px rgba(0, 0, 0, 0.12);
+      filter: brightness(0.98);
+    }
 
-.submit:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-  transform: none;
-  background: linear-gradient(135deg, #9ca3af 0%, #cbd5e1 100%);
-  box-shadow: none;
-}
+    .submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      background: linear-gradient(135deg, #9ca3af 0%, #cbd5e1 100%);
+      box-shadow: none;
+    }
 
     .loading {
       padding: 24px 0;
@@ -227,11 +227,31 @@
       font-weight: 800;
     }
 
+    .summary-right {
+      text-align: right;
+      line-height: 1.25;
+    }
+
     .summary-budget {
       font-size: 13px;
       color: var(--sub);
       font-weight: 800;
       white-space: nowrap;
+    }
+
+    .summary-balance {
+      margin-top: 4px;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .summary-balance.plus {
+      color: var(--blue);
+    }
+
+    .summary-balance.minus {
+      color: var(--red);
     }
 
     .summary-value {
@@ -337,7 +357,7 @@
 <body>
   <div class="app">
     <div class="header">
-      <h1>Household Logger Personal</h1>
+      <h1>家計簿ロガー</h1>
       <div class="meta">
         <div>日付：<span id="todayText">取得中...</span></div>
         <div>入力先：<span id="sheetName">取得中...</span></div>
@@ -383,7 +403,10 @@
           <div class="summary-item">
             <div class="summary-top">
               <div class="summary-label">交際費</div>
-              <div id="socialBudget" class="summary-budget">¥0</div>
+              <div class="summary-right">
+                <div id="socialBudget" class="summary-budget">¥0</div>
+                <div id="socialBalance" class="summary-balance plus">¥0</div>
+              </div>
             </div>
             <div id="socialRemaining" class="summary-value social">¥0</div>
           </div>
@@ -391,7 +414,10 @@
           <div class="summary-item">
             <div class="summary-top">
               <div class="summary-label">食費</div>
-              <div id="foodBudget" class="summary-budget">¥0</div>
+              <div class="summary-right">
+                <div id="foodBudget" class="summary-budget">¥0</div>
+                <div id="foodBalance" class="summary-balance plus">¥0</div>
+              </div>
             </div>
             <div id="foodRemaining" class="summary-value food">¥0</div>
           </div>
@@ -430,8 +456,10 @@
     const lastEl = document.getElementById('last');
 
     const socialBudgetEl = document.getElementById('socialBudget');
+    const socialBalanceEl = document.getElementById('socialBalance');
     const socialRemainingEl = document.getElementById('socialRemaining');
     const foodBudgetEl = document.getElementById('foodBudget');
+    const foodBalanceEl = document.getElementById('foodBalance');
     const foodRemainingEl = document.getElementById('foodRemaining');
     const cardPaymentEl = document.getElementById('cardPayment');
 
@@ -638,13 +666,42 @@
     function updateSummary(summary) {
       socialBudgetEl.textContent = formatYen(summary.socialBudget || 0);
       socialRemainingEl.textContent = formatYen(summary.socialRemaining || 0);
+      setBalanceText(socialBalanceEl, summary.socialBalance || 0);
+
       foodBudgetEl.textContent = formatYen(summary.foodBudget || 0);
       foodRemainingEl.textContent = formatYen(summary.foodRemaining || 0);
+      setBalanceText(foodBalanceEl, summary.foodBalance || 0);
+
       cardPaymentEl.textContent = formatYen(summary.cardPayment || 0);
+    }
+
+    function setBalanceText(element, value) {
+      const number = Number(value || 0);
+
+      element.textContent = formatSignedYen(number);
+      element.classList.remove('plus');
+      element.classList.remove('minus');
+
+      if (number < 0) {
+        element.classList.add('minus');
+      } else {
+        element.classList.add('plus');
+      }
     }
 
     function formatYen(value) {
       return '¥' + Number(value || 0).toLocaleString();
+    }
+
+    function formatSignedYen(value) {
+      const number = Number(value || 0);
+      const absText = '¥' + Math.abs(number).toLocaleString();
+
+      if (number < 0) {
+        return '-' + absText;
+      }
+
+      return absText;
     }
 
     function vibrateSuccess() {
